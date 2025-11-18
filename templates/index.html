@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QSAR Activity Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="min-h-screen">
+    <div class="content-wrapper">
+        <!-- Top Navigation Bar -->
+        <nav class="border-b border-gray-800/50 backdrop-blur-xl bg-black/40 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-white">QSAR Predictor</h1>
+                        <p class="text-xs text-gray-500">Molecular Activity Analysis</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">● Online</span>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto px-6 py-12">
+            
+            <!-- Error Alert -->
+            {% if error %}
+            <div class="mb-8 slide-in">
+                <div class="neon-border rounded-2xl bg-red-950/30 p-6 backdrop-blur-sm">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-6 h-6 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-red-400 font-bold text-lg mb-1">Prediction Error</h3>
+                            <p class="text-red-300/80 text-sm">{{ error }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Main Grid Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left Column - Input Section -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="neon-border rounded-2xl bg-gray-900/40 backdrop-blur-xl p-8 grid-pattern">
+                        <div class="mb-8">
+                            <h2 class="text-3xl font-bold text-white mb-2">New Prediction</h2>
+                            <p class="text-gray-400">Enter molecular structure and select prediction model</p>
+                        </div>
+
+                        <form method="POST" action="/predict" class="space-y-6">
+                            <!-- SMILES Input -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">
+                                    <span class="flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                                        </svg>
+                                        SMILES Structure
+                                    </span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="smiles" 
+                                    name="smiles" 
+                                    placeholder="ClCN[C@@H]1CC[C@@H](c2ccc(Cl)c(Cl)c2)c3ccccc13"
+                                    required
+                                    class="mono w-full px-5 py-4 bg-black/60 border border-gray-700 rounded-xl text-blue-400 placeholder-gray-600 transition-all duration-300 text-sm"
+                                    value="{{ smiles if smiles else (result.smiles if result else '') }}"
+                                >
+                            </div>
+
+                            <!-- Model Selection -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">
+                                    <span class="flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                        </svg>
+                                        ML Model Selection
+                                    </span>
+                                </label>
+                                <div class="relative">
+                                    <select 
+                                        id="my_dropdown" 
+                                        name="my_dropdown" 
+                                        class="w-full px-5 py-4 bg-black/60 border border-gray-700 rounded-xl text-gray-200 appearance-none transition-all duration-300 cursor-pointer"
+                                    >
+                                        <option value="xg" {% if (selected_model == 'xg') or (result and result.model == 'XG') %}selected{% endif %}>XGBoost - Extreme Gradient Boosting</option>
+                                        <option value="rf" {% if (selected_model == 'rf') or (result and result.model == 'RF') %}selected{% endif %}>Random Forest - Ensemble Learning</option>
+                                        <option value="lr" {% if (selected_model == 'lr') or (result and result.model == 'LR') %}selected{% endif %}>Logistic Regression - Linear Model</option>
+                                        <option value="svm" {% if (selected_model == 'svm') or (result and result.model == 'SVM') %}selected{% endif %}>SVM - Support Vector Machine</option>
+                                        <option value="knn" {% if (selected_model == 'knn') or (result and result.model == 'KNN') %}selected{% endif %}>KNN - K Nearest Neighbors</option>
+                                    </select>
+                                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button 
+                                type="submit" 
+                                class="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl flex items-center justify-center gap-3"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                Run Prediction Analysis
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Results Section (if available) -->
+                    {% if result %}
+                    <div class="slide-in space-y-6">
+                        <!-- Main Prediction Result -->
+                        <div class="neon-border rounded-2xl bg-gray-900/40 backdrop-blur-xl p-8 {% if result.prediction == 'ACTIVE' %}pulse-glow{% endif %}">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-xl font-bold text-white">Prediction Result</h3>
+                                <span class="px-4 py-2 rounded-full text-xs font-bold
+                                    {% if result.prediction == 'ACTIVE' %}
+                                        bg-green-500/20 text-green-400 border border-green-500/30
+                                    {% else %}
+                                        bg-red-500/20 text-red-400 border border-red-500/30
+                                    {% endif %}
+                                ">
+                                    Class {{ result.prediction_class }}
+                                </span>
+                            </div>
+                            
+                            <div class="flex items-center gap-6">
+                                <div class="w-24 h-24 rounded-2xl flex items-center justify-center
+                                    {% if result.prediction == 'ACTIVE' %}
+                                        bg-green-500/10 border-2 border-green-500/30
+                                    {% else %}
+                                        bg-red-500/10 border-2 border-red-500/30
+                                    {% endif %}
+                                ">
+                                    {% if result.prediction == 'ACTIVE' %}
+                                        <svg class="w-12 h-12 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    {% else %}
+                                        <svg class="w-12 h-12 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-6xl font-black stat-number mb-2">{{ result.prediction }}</p>
+                                    <p class="text-gray-400">Biological Activity Status</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Molecular Descriptors Grid -->
+                        <div class="neon-border rounded-2xl bg-gray-900/40 backdrop-blur-xl p-8">
+                            <h3 class="text-xl font-bold text-white mb-6">Molecular Descriptors</h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                {% macro descriptor(label, value, color) %}
+                                <div class="bg-black/40 border border-gray-800 rounded-xl p-4">
+                                    <p class="text-xs text-gray-500 mb-1 uppercase tracking-wider">{{ label }}</p>
+                                    <p class="text-2xl font-bold text-{{ color }}-400">{{ value }}</p>
+                                </div>
+                                {% endmacro %}
+                                
+                                {{ descriptor('MW', result.mol_weight, 'blue') }}
+                                {{ descriptor('LogP', result.logp, 'purple') }}
+                                {{ descriptor('H-Donors', result.h_donors, 'green') }}
+                                {{ descriptor('H-Accept', result.h_acceptors, 'yellow') }}
+                                {{ descriptor('TPSA', result.tpsa, 'pink') }}
+                                {{ descriptor('Rot Bonds', result.rotatable_bonds, 'indigo') }}
+                                {{ descriptor('Arom Rings', result.aromatic_rings, 'cyan') }}
+                                {{ descriptor('Tot Rings', result.total_rings, 'orange') }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Right Column - Stats & Info -->
+                <div class="space-y-6">
+                    {% if result %}
+                    <!-- Confidence Score -->
+                    <div class="neon-border rounded-2xl bg-gray-900/40 backdrop-blur-xl p-6 slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-400">Confidence Level</p>
+                                <p class="text-xs text-gray-600">Model: {{ result.model }}</p>
+                            </div>
+                        </div>
+                        <div class="text-center py-6">
+                            <p class="text-7xl font-black stat-number">{{ result.confidence }}</p>
+                            <p class="text-3xl font-bold text-gray-600">%</p>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+                            <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full" style="width: {{ result.confidence }}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Probability Distribution -->
+                    <div class="neon-border rounded-2xl bg-gray-900/40 backdrop-blur-xl p-6">
+                        <h3 class="text-lg font-bold text-white mb-4">Probability Distribution</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-green-400 font-semibold">Active</span>
+                                    <span class="text-green-400 font-bold">{{ result.probability_active }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-full rounded-full" style="width: {{ result.probability_active }}%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-red-400 font-semibold">Inactive</span>
+                                    <span class="text-red-400 font-bold">{{ result.probability_inactive }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-red-500 to-rose-500 h-full rounded-full" style="width: {{ result.probability_inactive }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Info Card -->
+                    <div class="neon-border rounded-2xl bg-gray-900/40 backdrop-blur-xl p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-bold text-white">About</h3>
+                        </div>
+                        <div class="space-y-3 text-sm text-gray-400">
+                            <p>This QSAR predictor uses machine learning to analyze molecular structures and predict biological activity.</p>
+                            <div class="divider my-4"></div>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                    <span>Real-time predictions</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+                                    <span>Multiple ML models</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                    <span>Detailed descriptors</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="border-t border-gray-800/50 mt-16 py-8">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="text-center md:text-left">
+                        <p class="text-gray-400 text-sm">© 2025 QSAR Molecular Predictor. All rights reserved.</p>
+                    </div>
+                    <div class="flex gap-6 text-sm">
+                        <a href="https://github.com/yourusername/qsar-predictor" target="_blank" class="text-gray-400 hover:text-blue-400 transition-colors">Documentation</a>
+                        <a href="https://github.com/yourusername/qsar-predictor" target="_blank" class="text-gray-400 hover:text-blue-400 transition-colors">GitHub</a>
+                        <a href="#" class="text-gray-400 hover:text-blue-400 transition-colors">About</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
